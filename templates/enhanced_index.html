@@ -1,0 +1,689 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="hero-section">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="hero-content text-center">
+                    <h1 class="display-4 fw-bold text-white mb-4">
+                        <i class="fas fa-plane me-3"></i>
+                        Smart Flight Search
+                    </h1>
+                    <p class="lead text-white-50 mb-5">
+                        Just tell us where you want to go - we'll handle the rest with AI-powered understanding
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <!-- Natural Language Search -->
+            <div class="card shadow-lg border-0 mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-microphone me-2"></i>
+                        Smart Search
+                    </h4>
+                </div>
+                <div class="card-body p-4">
+                    <div class="natural-search-container">
+                        <div class="search-input-group">
+                            <div class="input-group input-group-lg">
+                                <span class="input-group-text bg-light border-0">
+                                    <i class="fas fa-search text-muted"></i>
+                                </span>
+                                <input type="text" 
+                                       class="form-control border-0 shadow-none" 
+                                       id="naturalSearchInput" 
+                                       placeholder="Try: 'Wedding by 12pm August 15th, leave Sunday from LA to NY'"
+                                       onkeypress="handleNaturalSearchKeyPress(event)">
+                                <button class="btn btn-outline-secondary voice-btn" 
+                                        type="button" 
+                                        id="voiceButton"
+                                        onclick="toggleVoiceInput()">
+                                    <i class="fas fa-microphone"></i>
+                                </button>
+                                <button class="btn btn-primary" 
+                                        type="button" 
+                                        onclick="processNaturalSearch()">
+                                    <i class="fas fa-magic me-2"></i>
+                                    Search
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Voice Status -->
+                        <div id="voiceStatus" class="voice-status mt-3" style="display: none;">
+                            <div class="voice-indicator">
+                                <div class="voice-wave">
+                                    <div class="wave-bar"></div>
+                                    <div class="wave-bar"></div>
+                                    <div class="wave-bar"></div>
+                                    <div class="wave-bar"></div>
+                                    <div class="wave-bar"></div>
+                                </div>
+                                <span class="voice-text">Listening...</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Parsing Status -->
+                        <div id="parsingStatus" class="parsing-status mt-3" style="display: none;">
+                            <div class="d-flex align-items-center">
+                                <div class="spinner-border spinner-border-sm text-primary me-2" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <span>Understanding your request...</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Parsed Results -->
+                        <div id="parsedResults" class="parsed-results mt-3" style="display: none;">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6 class="card-title">
+                                        <i class="fas fa-brain me-2"></i>
+                                        What I understood:
+                                    </h6>
+                                    <div id="parsedContent"></div>
+                                    <div class="mt-3">
+                                        <button class="btn btn-primary btn-sm" onclick="executeSearch()">
+                                            <i class="fas fa-check me-1"></i>
+                                            Looks Good - Search
+                                        </button>
+                                        <button class="btn btn-outline-secondary btn-sm ms-2" onclick="clearParsedResults()">
+                                            <i class="fas fa-times me-1"></i>
+                                            Try Again
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Example Queries -->
+                    <div class="example-queries mt-4">
+                        <h6 class="text-muted mb-3">Try these examples:</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="example-query" onclick="useExampleQuery(this)">
+                                    <i class="fas fa-quote-left me-2"></i>
+                                    "Business trip from Miami to Denver next Tuesday"
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="example-query" onclick="useExampleQuery(this)">
+                                    <i class="fas fa-quote-left me-2"></i>
+                                    "Wedding by 12pm August 15th, leave Sunday from LA to NY"
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="example-query" onclick="useExampleQuery(this)">
+                                    <i class="fas fa-quote-left me-2"></i>
+                                    "Family vacation to Orlando, 4 passengers, flexible dates"
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="example-query" onclick="useExampleQuery(this)">
+                                    <i class="fas fa-quote-left me-2"></i>
+                                    "Cheap flight from Vegas to Phoenix this weekend"
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Traditional Search Form (Collapsible) -->
+            <div class="card shadow-lg border-0">
+                <div class="card-header bg-secondary text-white">
+                    <h4 class="mb-0">
+                        <button class="btn btn-link text-white text-decoration-none p-0" 
+                                type="button" 
+                                data-bs-toggle="collapse" 
+                                data-bs-target="#traditionalSearch" 
+                                aria-expanded="false">
+                            <i class="fas fa-form me-2"></i>
+                            Traditional Search Form
+                            <i class="fas fa-chevron-down ms-2"></i>
+                        </button>
+                    </h4>
+                </div>
+                <div class="collapse" id="traditionalSearch">
+                    <div class="card-body p-4">
+                        <form id="flightSearchForm">
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="origin" class="form-label">
+                                        <i class="fas fa-map-marker-alt me-1"></i>
+                                        From
+                                    </label>
+                                    <input type="text" class="form-control" id="origin" name="origin" 
+                                           placeholder="LAX, JFK, etc." required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="destination" class="form-label">
+                                        <i class="fas fa-map-marker-alt me-1"></i>
+                                        To
+                                    </label>
+                                    <input type="text" class="form-control" id="destination" name="destination" 
+                                           placeholder="LAX, JFK, etc." required>
+                                </div>
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="departure_date" class="form-label">
+                                        <i class="fas fa-calendar me-1"></i>
+                                        Departure Date
+                                    </label>
+                                    <input type="date" class="form-control" id="departure_date" name="departure_date" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="return_date" class="form-label">
+                                        <i class="fas fa-calendar me-1"></i>
+                                        Return Date (Optional)
+                                    </label>
+                                    <input type="date" class="form-control" id="return_date" name="return_date">
+                                </div>
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <label for="passenger_count" class="form-label">
+                                        <i class="fas fa-user me-1"></i>
+                                        Passengers
+                                    </label>
+                                    <select class="form-select" id="passenger_count" name="passenger_count">
+                                        <option value="1">1 Passenger</option>
+                                        <option value="2">2 Passengers</option>
+                                        <option value="3">3 Passengers</option>
+                                        <option value="4">4 Passengers</option>
+                                        <option value="5">5+ Passengers</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="class_preference" class="form-label">
+                                        <i class="fas fa-star me-1"></i>
+                                        Class
+                                    </label>
+                                    <select class="form-select" id="class_preference" name="class_preference">
+                                        <option value="economy">Economy</option>
+                                        <option value="premium_economy">Premium Economy</option>
+                                        <option value="business">Business</option>
+                                        <option value="first">First</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="budget_limit" class="form-label">
+                                        <i class="fas fa-coins me-1"></i>
+                                        Points Budget
+                                    </label>
+                                    <input type="number" class="form-control" id="budget_limit" name="budget_limit" 
+                                           placeholder="e.g., 100000">
+                                </div>
+                            </div>
+                            
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="flexible_dates" name="flexible_dates">
+                                        <label class="form-check-label" for="flexible_dates">
+                                            <i class="fas fa-calendar-alt me-1"></i>
+                                            My dates are flexible (±3 days)
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-secondary btn-lg w-100">
+                                <i class="fas fa-search me-2"></i>
+                                Search Flights
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Context Insights Panel -->
+    <div class="row justify-content-center mt-4" id="contextInsights" style="display: none;">
+        <div class="col-lg-10">
+            <div class="card shadow-lg border-0">
+                <div class="card-header bg-info text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-lightbulb me-2"></i>
+                        Travel Insights
+                    </h4>
+                </div>
+                <div class="card-body p-4" id="contextContent">
+                    <!-- Context insights will be populated here -->
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Results Section -->
+    <div class="row justify-content-center mt-4" id="resultsSection" style="display: none;">
+        <div class="col-lg-10">
+            <div class="card shadow-lg border-0">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-chart-line me-2"></i>
+                        Smart Flight Recommendations
+                    </h4>
+                </div>
+                <div class="card-body p-4" id="resultsContent">
+                    <!-- Results will be populated here -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Features Section -->
+<div class="bg-light py-5">
+    <div class="container">
+        <div class="row text-center">
+            <div class="col-12 mb-4">
+                <h2 class="fw-bold">Enhanced AI Features</h2>
+                <p class="text-muted">Next-generation flight search with natural language understanding</p>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-4 mb-4">
+                <div class="feature-card text-center">
+                    <div class="feature-icon">
+                        <i class="fas fa-microphone"></i>
+                    </div>
+                    <h5 class="fw-bold">Voice Search</h5>
+                    <p class="text-muted">Simply speak your travel request - our AI understands natural language</p>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="feature-card text-center">
+                    <div class="feature-icon">
+                        <i class="fas fa-brain"></i>
+                    </div>
+                    <h5 class="fw-bold">Context Awareness</h5>
+                    <p class="text-muted">Real-time insights about weather, events, and peak seasons</p>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="feature-card text-center">
+                    <div class="feature-icon">
+                        <i class="fas fa-comments"></i>
+                    </div>
+                    <h5 class="fw-bold">Conversational AI</h5>
+                    <p class="text-muted">Chat naturally with our AI assistant for personalized recommendations</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Enhanced JavaScript for natural language processing and voice input
+let recognition;
+let isListening = false;
+let parsedQuery = null;
+
+// Initialize speech recognition
+function initializeSpeechRecognition() {
+    if ('webkitSpeechRecognition' in window) {
+        recognition = new webkitSpeechRecognition();
+        recognition.continuous = false;
+        recognition.interimResults = false;
+        recognition.lang = 'en-US';
+        
+        recognition.onstart = function() {
+            isListening = true;
+            document.getElementById('voiceStatus').style.display = 'block';
+            document.getElementById('voiceButton').innerHTML = '<i class="fas fa-stop text-danger"></i>';
+        };
+        
+        recognition.onresult = function(event) {
+            const transcript = event.results[0][0].transcript;
+            document.getElementById('naturalSearchInput').value = transcript;
+            processNaturalSearch();
+        };
+        
+        recognition.onend = function() {
+            isListening = false;
+            document.getElementById('voiceStatus').style.display = 'none';
+            document.getElementById('voiceButton').innerHTML = '<i class="fas fa-microphone"></i>';
+        };
+        
+        recognition.onerror = function(event) {
+            console.error('Speech recognition error:', event.error);
+            showError('Voice recognition error: ' + event.error);
+            isListening = false;
+            document.getElementById('voiceStatus').style.display = 'none';
+            document.getElementById('voiceButton').innerHTML = '<i class="fas fa-microphone"></i>';
+        };
+    } else {
+        console.log('Speech recognition not supported');
+        document.getElementById('voiceButton').style.display = 'none';
+    }
+}
+
+// Toggle voice input
+function toggleVoiceInput() {
+    if (!recognition) {
+        showError('Voice recognition not supported in this browser');
+        return;
+    }
+    
+    if (isListening) {
+        recognition.stop();
+    } else {
+        recognition.start();
+    }
+}
+
+// Handle natural search key press
+function handleNaturalSearchKeyPress(event) {
+    if (event.key === 'Enter') {
+        processNaturalSearch();
+    }
+}
+
+// Process natural language search
+async function processNaturalSearch() {
+    const query = document.getElementById('naturalSearchInput').value.trim();
+    
+    if (!query) {
+        showError('Please enter a search query');
+        return;
+    }
+    
+    // Show parsing status
+    document.getElementById('parsingStatus').style.display = 'block';
+    document.getElementById('parsedResults').style.display = 'none';
+    
+    try {
+        const response = await fetch('/api/parse', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ query: query })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            parsedQuery = result.parsed_query;
+            displayParsedResults(result.parsed_query);
+        } else {
+            showError('Failed to parse your request: ' + result.error);
+        }
+    } catch (error) {
+        showError('Error processing your request: ' + error.message);
+    } finally {
+        document.getElementById('parsingStatus').style.display = 'none';
+    }
+}
+
+// Display parsed results
+function displayParsedResults(parsed) {
+    const content = document.getElementById('parsedContent');
+    
+    let html = '<div class="row">';
+    
+    // Origin and destination
+    if (parsed.origin || parsed.destination) {
+        html += '<div class="col-md-6 mb-2">';
+        html += '<strong>Route:</strong> ';
+        html += `${parsed.origin || '?'} → ${parsed.destination || '?'}`;
+        html += '</div>';
+    }
+    
+    // Departure date
+    if (parsed.departure_date) {
+        html += '<div class="col-md-6 mb-2">';
+        html += '<strong>Departure:</strong> ' + formatDate(parsed.departure_date);
+        html += '</div>';
+    }
+    
+    // Return date
+    if (parsed.return_date) {
+        html += '<div class="col-md-6 mb-2">';
+        html += '<strong>Return:</strong> ' + formatDate(parsed.return_date);
+        html += '</div>';
+    }
+    
+    // Passengers and class
+    html += '<div class="col-md-6 mb-2">';
+    html += '<strong>Passengers:</strong> ' + parsed.passenger_count;
+    html += '</div>';
+    
+    html += '<div class="col-md-6 mb-2">';
+    html += '<strong>Class:</strong> ' + capitalizeFirst(parsed.class_preference);
+    html += '</div>';
+    
+    // Event type
+    if (parsed.event_type) {
+        html += '<div class="col-md-6 mb-2">';
+        html += '<strong>Event:</strong> ' + capitalizeFirst(parsed.event_type);
+        html += '</div>';
+    }
+    
+    // Flexibility
+    if (parsed.flexibility && parsed.flexibility.dates_flexible) {
+        html += '<div class="col-md-6 mb-2">';
+        html += '<strong>Flexible dates:</strong> <span class="text-success">Yes</span>';
+        html += '</div>';
+    }
+    
+    html += '</div>';
+    
+    // Confidence indicator
+    const confidence = parsed.confidence || 0;
+    const confidenceClass = confidence > 0.8 ? 'success' : confidence > 0.5 ? 'warning' : 'danger';
+    html += `<div class="mt-2"><small class="text-${confidenceClass}">Confidence: ${(confidence * 100).toFixed(0)}%</small></div>`;
+    
+    content.innerHTML = html;
+    document.getElementById('parsedResults').style.display = 'block';
+}
+
+// Execute search with parsed query
+async function executeSearch() {
+    if (!parsedQuery) {
+        showError('No parsed query available');
+        return;
+    }
+    
+    // Convert parsed query to flight data
+    const flightData = {
+        origin: parsedQuery.origin || '',
+        destination: parsedQuery.destination || '',
+        departure_date: parsedQuery.departure_date || '',
+        return_date: parsedQuery.return_date || '',
+        passenger_count: parsedQuery.passenger_count || 1,
+        class_preference: parsedQuery.class_preference || 'economy',
+        flexible_dates: parsedQuery.flexibility?.dates_flexible || false,
+        budget_limit: null
+    };
+    
+    // Show loading
+    showLoading();
+    
+    // Hide parsed results
+    document.getElementById('parsedResults').style.display = 'none';
+    
+    try {
+        // Get context insights first
+        const contextResponse = await fetch('/api/context', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(flightData)
+        });
+        
+        const contextResult = await contextResponse.json();
+        
+        if (contextResult.success) {
+            displayContextInsights(contextResult.context);
+        }
+        
+        // Then get flight recommendations
+        const response = await fetch('/api/search', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(flightData)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            currentFlightData = result.flight_data;
+            displayResults(result.recommendation, result.flight_data);
+            showResults();
+        } else {
+            showError('Flight search failed: ' + result.error);
+        }
+    } catch (error) {
+        showError('Network error: ' + error.message);
+    } finally {
+        hideLoading();
+    }
+}
+
+// Display context insights
+function displayContextInsights(context) {
+    const contextContent = document.getElementById('contextContent');
+    
+    let html = '';
+    
+    // Display insights
+    if (context.insights && context.insights.length > 0) {
+        html += '<div class="row">';
+        
+        context.insights.forEach(insight => {
+            const iconClass = getInsightIcon(insight.type);
+            const badgeClass = getInsightBadgeClass(insight.type);
+            
+            html += `
+                <div class="col-md-6 mb-3">
+                    <div class="insight-card">
+                        <div class="insight-header">
+                            <i class="${iconClass} me-2"></i>
+                            <span class="badge ${badgeClass}">${insight.type}</span>
+                            <span class="insight-title">${insight.title}</span>
+                        </div>
+                        <p class="insight-description">${insight.description}</p>
+                        <small class="text-muted">Impact: ${insight.impact} | Confidence: ${(insight.relevance_score * 100).toFixed(0)}%</small>
+                    </div>
+                </div>
+            `;
+        });
+        
+        html += '</div>';
+    }
+    
+    // Display warnings
+    if (context.warnings && context.warnings.length > 0) {
+        html += '<div class="alert alert-warning" role="alert">';
+        html += '<h6><i class="fas fa-exclamation-triangle me-2"></i>Important Considerations</h6>';
+        html += '<ul class="mb-0">';
+        context.warnings.forEach(warning => {
+            html += `<li>${warning}</li>`;
+        });
+        html += '</ul></div>';
+    }
+    
+    // Display suggestions
+    if (context.suggestions && context.suggestions.length > 0) {
+        html += '<div class="alert alert-info" role="alert">';
+        html += '<h6><i class="fas fa-lightbulb me-2"></i>Smart Suggestions</h6>';
+        html += '<ul class="mb-0">';
+        context.suggestions.forEach(suggestion => {
+            html += `<li>${suggestion}</li>`;
+        });
+        html += '</ul></div>';
+    }
+    
+    contextContent.innerHTML = html;
+    document.getElementById('contextInsights').style.display = 'block';
+}
+
+// Get insight icon based on type
+function getInsightIcon(type) {
+    const icons = {
+        'warning': 'fas fa-exclamation-triangle text-warning',
+        'info': 'fas fa-info-circle text-info',
+        'suggestion': 'fas fa-lightbulb text-success',
+        'tip': 'fas fa-star text-primary'
+    };
+    return icons[type] || 'fas fa-info-circle';
+}
+
+// Get insight badge class based on type
+function getInsightBadgeClass(type) {
+    const classes = {
+        'warning': 'bg-warning',
+        'info': 'bg-info',
+        'suggestion': 'bg-success',
+        'tip': 'bg-primary'
+    };
+    return classes[type] || 'bg-secondary';
+}
+
+// Clear parsed results
+function clearParsedResults() {
+    document.getElementById('parsedResults').style.display = 'none';
+    document.getElementById('naturalSearchInput').value = '';
+    parsedQuery = null;
+}
+
+// Use example query
+function useExampleQuery(element) {
+    const query = element.textContent.replace(/"/g, '').trim();
+    document.getElementById('naturalSearchInput').value = query;
+    processNaturalSearch();
+}
+
+// Format date for display
+function formatDate(dateString) {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
+}
+
+// Capitalize first letter
+function capitalizeFirst(str) {
+    return str.charAt(0).toUpperCase() + str.slice(1).replace('_', ' ');
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    initializeSpeechRecognition();
+    
+    // Set minimum dates
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('departure_date').min = today;
+    document.getElementById('return_date').min = today;
+    
+    // Update return date minimum when departure date changes
+    document.getElementById('departure_date').addEventListener('change', function() {
+        document.getElementById('return_date').min = this.value;
+    });
+});
+</script>
+{% endblock %}

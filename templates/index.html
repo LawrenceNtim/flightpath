@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="hero-section">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="hero-content text-center">
+                    <h1 class="display-4 fw-bold text-white mb-4">
+                        <i class="fas fa-plane me-3"></i>
+                        AI-Powered Flight Optimization
+                    </h1>
+                    <p class="lead text-white-50 mb-5">
+                        Combine rule-based optimization with Claude AI strategic analysis for the best flight recommendations
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Search Form -->
+            <div class="card shadow-lg border-0">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-search me-2"></i>
+                        Flight Search
+                    </h4>
+                </div>
+                <div class="card-body p-4">
+                    <form id="flightSearchForm">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="origin" class="form-label">
+                                    <i class="fas fa-map-marker-alt me-1"></i>
+                                    From
+                                </label>
+                                <input type="text" class="form-control" id="origin" name="origin" 
+                                       placeholder="LAX, JFK, etc." required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="destination" class="form-label">
+                                    <i class="fas fa-map-marker-alt me-1"></i>
+                                    To
+                                </label>
+                                <input type="text" class="form-control" id="destination" name="destination" 
+                                       placeholder="LAX, JFK, etc." required>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="departure_date" class="form-label">
+                                    <i class="fas fa-calendar me-1"></i>
+                                    Departure Date
+                                </label>
+                                <input type="date" class="form-control" id="departure_date" name="departure_date" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="return_date" class="form-label">
+                                    <i class="fas fa-calendar me-1"></i>
+                                    Return Date (Optional)
+                                </label>
+                                <input type="date" class="form-control" id="return_date" name="return_date">
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label for="passenger_count" class="form-label">
+                                    <i class="fas fa-user me-1"></i>
+                                    Passengers
+                                </label>
+                                <select class="form-select" id="passenger_count" name="passenger_count">
+                                    <option value="1">1 Passenger</option>
+                                    <option value="2">2 Passengers</option>
+                                    <option value="3">3 Passengers</option>
+                                    <option value="4">4 Passengers</option>
+                                    <option value="5">5+ Passengers</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="class_preference" class="form-label">
+                                    <i class="fas fa-star me-1"></i>
+                                    Class
+                                </label>
+                                <select class="form-select" id="class_preference" name="class_preference">
+                                    <option value="economy">Economy</option>
+                                    <option value="premium_economy">Premium Economy</option>
+                                    <option value="business">Business</option>
+                                    <option value="first">First</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="budget_limit" class="form-label">
+                                    <i class="fas fa-coins me-1"></i>
+                                    Points Budget
+                                </label>
+                                <input type="number" class="form-control" id="budget_limit" name="budget_limit" 
+                                       placeholder="e.g., 100000">
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="flexible_dates" name="flexible_dates">
+                                    <label class="form-check-label" for="flexible_dates">
+                                        <i class="fas fa-calendar-alt me-1"></i>
+                                        My dates are flexible (±3 days)
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary btn-lg w-100">
+                            <i class="fas fa-search me-2"></i>
+                            Search Flights
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Results Section -->
+    <div class="row justify-content-center mt-5" id="resultsSection" style="display: none;">
+        <div class="col-lg-10">
+            <div class="card shadow-lg border-0">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-chart-line me-2"></i>
+                        Flight Recommendations
+                    </h4>
+                </div>
+                <div class="card-body p-4" id="resultsContent">
+                    <!-- Results will be populated here -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Features Section -->
+<div class="bg-light py-5">
+    <div class="container">
+        <div class="row text-center">
+            <div class="col-12 mb-4">
+                <h2 class="fw-bold">Why Choose FlightPath?</h2>
+                <p class="text-muted">Advanced AI-powered optimization for smarter flight bookings</p>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-4 mb-4">
+                <div class="feature-card text-center">
+                    <div class="feature-icon">
+                        <i class="fas fa-brain"></i>
+                    </div>
+                    <h5 class="fw-bold">AI-Powered Analysis</h5>
+                    <p class="text-muted">Claude AI analyzes market trends, booking patterns, and strategic opportunities</p>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="feature-card text-center">
+                    <div class="feature-icon">
+                        <i class="fas fa-calculator"></i>
+                    </div>
+                    <h5 class="fw-bold">Rule-Based Optimization</h5>
+                    <p class="text-muted">Combines traditional points optimization with modern AI insights</p>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="feature-card text-center">
+                    <div class="feature-icon">
+                        <i class="fas fa-comments"></i>
+                    </div>
+                    <h5 class="fw-bold">Interactive Chat</h5>
+                    <p class="text-muted">Get personalized advice and strategies from our AI assistant</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Set minimum date to today
+document.getElementById('departure_date').min = new Date().toISOString().split('T')[0];
+document.getElementById('return_date').min = new Date().toISOString().split('T')[0];
+
+// Update return date minimum when departure date changes
+document.getElementById('departure_date').addEventListener('change', function() {
+    document.getElementById('return_date').min = this.value;
+});
+</script>
+{% endblock %}

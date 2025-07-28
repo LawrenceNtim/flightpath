@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}Page Not Found - FlightPath{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-6 text-center">
+            <div class="error-page">
+                <div class="error-icon">
+                    <i class="fas fa-plane-slash"></i>
+                </div>
+                <h1 class="display-1 fw-bold text-primary">404</h1>
+                <h2 class="mb-4">Flight Path Not Found</h2>
+                <p class="lead text-muted mb-4">
+                    Looks like this route doesn't exist. Let's get you back on track!
+                </p>
+                <a href="{{ url_for('index') }}" class="btn btn-primary btn-lg">
+                    <i class="fas fa-home me-2"></i>
+                    Return to Search
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
