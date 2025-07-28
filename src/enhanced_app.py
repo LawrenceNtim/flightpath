@@ -13,12 +13,16 @@ from flask_cors import CORS
 import sys
 import os
 
-# Add parent directory to path to import modules
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# Add current and parent directory to path to import modules
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(current_dir)
+sys.path.append(current_dir)
+sys.path.append(parent_dir)
 
 from ai_flightpath import AIFlightPath, FlightData
 from nlp_parser import FlightQueryParser
 from context_engine import ContextEngine
+from trip_orchestration_integration import TripOrchestrationIntegration
 
 app = Flask(__name__)
 CORS(app)
@@ -31,10 +35,11 @@ logger = logging.getLogger(__name__)
 ai_flightpath = None
 nlp_parser = None
 context_engine = None
+trip_orchestration = None
 
 def initialize_systems():
     """Initialize all AI systems."""
-    global ai_flightpath, nlp_parser, context_engine
+    global ai_flightpath, nlp_parser, context_engine, trip_orchestration
     
     try:
         # Initialize AI FlightPath
@@ -48,6 +53,10 @@ def initialize_systems():
         # Initialize Context Engine
         context_engine = ContextEngine()
         logger.info("✅ Context Engine initialized")
+        
+        # Initialize Trip Orchestration
+        trip_orchestration = TripOrchestrationIntegration()
+        logger.info("✅ Trip Orchestration system initialized")
         
         return True
     except Exception as e:
@@ -345,6 +354,7 @@ def health_check():
         'ai_flightpath': ai_flightpath is not None,
         'nlp_parser': nlp_parser is not None,
         'context_engine': context_engine is not None,
+        'trip_orchestration': trip_orchestration is not None,
         'timestamp': datetime.now().isoformat()
     }
     
@@ -358,7 +368,8 @@ def health_check():
     all_healthy = all([
         health_status['ai_flightpath'],
         health_status['nlp_parser'],
-        health_status['context_engine']
+        health_status['context_engine'],
+        health_status['trip_orchestration']
     ])
     
     return jsonify({
@@ -366,33 +377,139 @@ def health_check():
         'health': health_status
     })
 
+@app.route('/api/orchestrate-trip', methods=['POST'])
+def orchestrate_trip():
+    """API endpoint for complete trip orchestration."""
+    try:
+        data = request.json
+        query = data.get('query', '')
+        
+        if not query:
+            return jsonify({
+                'success': False,
+                'error': 'No query provided'
+            }), 400
+        
+        # Run trip orchestration asynchronously
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        
+        try:
+            result = loop.run_until_complete(
+                trip_orchestration.orchestrate_complete_trip(query)
+            )
+            
+            # Convert result to JSON-serializable format
+            orchestration_result = {
+                'trip_id': result.trip_id,
+                'original_query': result.original_query,
+                'parsed_request': result.parsed_request,
+                'budget_optimization': {
+                    'optimized_budget': {k: float(v) for k, v in result.budget_optimization['optimized_budget'].items()},
+                    'total_cost': result.budget_optimization['total_cost'],
+                    'savings': result.budget_optimization['savings'],
+                    'efficiency_score': result.budget_optimization['efficiency_score'],
+                    'recommendations': result.budget_optimization['recommendations'],
+                    'warnings': result.budget_optimization['warnings']
+                },
+                'orchestration_result': {
+                    'trip_id': result.orchestration_result.trip_id,
+                    'segments': [
+                        {
+                            'origin': seg.origin,
+                            'destination': seg.destination,
+                            'start_date': seg.start_date,
+                            'end_date': seg.end_date,
+                            'accommodation_type': seg.accommodation_type.value,
+                            'transportation_mode': seg.transportation_mode.value
+                        }
+                        for seg in result.orchestration_result.segments
+                    ],
+                    'activities': [
+                        {
+                            'name': act.name,
+                            'date': act.date,
+                            'duration_hours': act.duration_hours,
+                            'cost': float(act.cost),
+                            'category': act.category,
+                            'booking_required': act.booking_required
+                        }
+                        for act in result.orchestration_result.activities
+                    ],
+                    'special_requirements': [
+                        {
+                            'type': req.type.value,
+                            'description': req.description,
+                            'cost_impact': float(req.cost_impact),
+                            'handled': req.handled
+                        }
+                        for req in result.orchestration_result.special_requirements
+                    ],
+                    'cost_breakdown': {k: float(v) for k, v in result.orchestration_result.cost_breakdown.items()},
+                    'optimization_score': result.orchestration_result.optimization_score,
+                    'tax_savings': float(result.orchestration_result.tax_savings)
+                },
+                'daily_schedule': result.daily_schedule,
+                'booking_checklist': result.booking_checklist,
+                'total_cost': float(result.total_cost),
+                'tax_savings': float(result.tax_savings),
+                'efficiency_score': result.efficiency_score,
+                'confidence_score': result.confidence_score
+            }
+            
+            return jsonify({
+                'success': True,
+                'result': orchestration_result
+            })
+            
+        finally:
+            loop.close()
+            
+    except Exception as e:
+        logger.error(f"Error in trip orchestration: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 @app.route('/api/examples')
 def get_examples():
     """Get example queries for the interface."""
     examples = [
         {
             'query': 'Wedding by 12pm August 15th, leave Sunday from LA to NY',
-            'description': 'Event-based travel with time constraints'
+            'description': 'Event-based travel with time constraints',
+            'type': 'flight'
         },
         {
             'query': 'Business trip from Miami to Denver next Tuesday, first class',
-            'description': 'Business travel with class preference'
+            'description': 'Business travel with class preference',
+            'type': 'flight'
         },
         {
             'query': 'Family vacation to Orlando from Boston, 4 passengers, flexible dates',
-            'description': 'Family travel with flexibility'
+            'description': 'Family travel with flexibility',
+            'type': 'flight'
         },
         {
-            'query': 'Emergency flight from Seattle to Atlanta ASAP',
-            'description': 'Urgent travel requirement'
+            'query': '$4000 budget, family of 4, SF to Disneyland, flexible dates',
+            'description': 'Complete family trip orchestration with budget constraints',
+            'type': 'trip'
         },
         {
-            'query': 'Cheap flight from Vegas to Phoenix this weekend',
-            'description': 'Budget-conscious travel'
+            'query': 'LA and SF for 2 weeks, sister hosting, bring dog, music conference',
+            'description': 'Complex multi-city trip with pet and business requirements',
+            'type': 'trip'
         },
         {
-            'query': 'Conference in Dallas from Portland Monday, return Friday',
-            'description': 'Round-trip business travel'
+            'query': 'Martha\'s Vineyard weekend from NYC, $5000 budget, 5-bedroom house in Oak Bluffs',
+            'description': 'Luxury weekend getaway with specific accommodation needs',
+            'type': 'trip'
+        },
+        {
+            'query': 'Japan trip $1500 budget, United flights only, 40,000 points available from SF',
+            'description': 'International trip with airline and points constraints',
+            'type': 'trip'
         }
     ]
     
@@ -415,7 +532,8 @@ if __name__ == '__main__':
     # Initialize all systems on startup
     if initialize_systems():
         print("🚀 Enhanced FlightPath Web Interface starting...")
-        print("✨ Features: Natural Language Processing, Context Awareness, Voice Input")
+        print("✨ Features: Natural Language Processing, Context Awareness, Voice Input, Trip Orchestration")
+        print("🎯 New: Complete trip planning with budget optimization, accommodation booking, and activity planning")
         print("📍 Access the application at: http://localhost:5003")
         app.run(debug=True, host='0.0.0.0', port=5003)
     else:
