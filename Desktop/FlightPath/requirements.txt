@@ -1,0 +1,39 @@
+# Core AI dependencies
+google-generativeai>=0.3.0
+anthropic>=0.18.0  # Keep for backwards compatibility
+
+# Async and networking
+aiohttp>=3.9.0
+asyncio
+httpx>=0.25.0
+
+# Web scraping and automation
+playwright>=1.40.0
+beautifulsoup4>=4.12.0
+selenium>=4.15.0
+
+# Data processing
+pandas>=2.1.0
+numpy>=1.24.0
+
+# API and web framework
+fastapi>=0.104.0
+uvicorn>=0.24.0
+pydantic>=2.5.0
+
+# Utilities
+python-dotenv>=1.0.0
+pytz>=2023.3
+python-dateutil>=2.8.2
+
+# Logging and monitoring
+loguru>=0.7.2
+rich>=13.7.0
+
+# Testing
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+
+# Optional: for better performance
+orjson>=3.9.0
+ujson>=5.8.0
